@@ -153,6 +153,10 @@ ACCOUNT1_GMAIL_CREDENTIALS_FILE=credentials.json           # OAuth認証情報
 ACCOUNT1_GMAIL_TOKEN_FILE=tokens/token_account1.json       # トークン保存先
 ACCOUNT1_GMAIL_TARGET_EMAIL=your-gmail@gmail.com           # インポート先
 
+# Gmail フィルタとラベル設定
+ACCOUNT1_GMAIL_APPLY_FILTERS=false                         # Gmailフィルタ適用: false=無効, true=有効
+ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3               # カスタムラベル（オプション）
+
 # 削除設定
 ACCOUNT1_DELETE_AFTER_FORWARD=false   # デバッグ: false, 本番: true
 
@@ -174,10 +178,39 @@ ACCOUNT1_BACKUP_RETENTION_DAYS=90
 - **DELETE_AFTER_FORWARD=false**: デバッグモード - 最新5件のメールのみ処理、サーバーから削除しない
 - **DELETE_AFTER_FORWARD=true**: 本番モード - インポート成功後、POP3サーバーからメールを削除
 
-## Gmailフィルタ（オプション）
+## ラベルとフィルタの設定
 
-Gmailでインポートされたメールに自動的にラベルを付けるには：
+インポートされたメールのラベル付けには2つの方法があります：
 
+### 方法1: カスタムラベル（シンプル）
+
+`.env`ファイルで直接ラベルを指定します：
+
+```bash
+ACCOUNT1_GMAIL_APPLY_FILTERS=false
+ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
+```
+
+**動作:**
+- メールは `INBOX`、`UNREAD`、`ImportedFromPOP3` の3つのラベルで受信トレイに配置されます
+- カスタムラベル未指定の場合は `INBOX` と `UNREAD` のみ適用されます
+- Gmailの迷惑メール判定は通常通り機能します
+
+### 方法2: Gmailフィルタ（高度）
+
+Gmail側で既に作成したフィルタルールを適用します：
+
+```bash
+ACCOUNT1_GMAIL_APPLY_FILTERS=true
+ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
+```
+
+**動作:**
+- Gmailの既存フィルタルール（送信者、件名などによる自動振り分け）が適用されます
+- カスタムラベルを指定した場合、フィルタ適用後にさらにそのラベルも追加されます
+- カスタムラベル未指定の場合は、フィルタのみが適用されます
+
+**Gmailフィルタの作成方法:**
 1. Gmail → 設定 → フィルタとブロック中のアドレス に移動
 2. 新しいフィルタを作成：
    - **From**: `*@example.com`（またはソースドメイン）
@@ -192,6 +225,14 @@ Forwarded/
 ├── Example2
 └── Example3
 ```
+
+### 使い分けガイド
+
+| 用途 | 設定 | 使用例 |
+|------|------|--------|
+| シンプルにラベル付けしたい | `APPLY_FILTERS=false` + `CUSTOM_LABEL` | すべてのメールに同じラベルを付ける |
+| 送信者や件名で自動振り分け | `APPLY_FILTERS=true` | Gmailフィルタで詳細な振り分けルール適用 |
+| フィルタ + 追加ラベル | `APPLY_FILTERS=true` + `CUSTOM_LABEL` | フィルタで振り分け、さらに「POP3インポート」ラベルも追加 |
 
 ## 動作の仕組み
 

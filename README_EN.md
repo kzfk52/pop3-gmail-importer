@@ -153,6 +153,10 @@ ACCOUNT1_GMAIL_CREDENTIALS_FILE=credentials.json           # OAuth credentials
 ACCOUNT1_GMAIL_TOKEN_FILE=tokens/token_account1.json       # Token storage
 ACCOUNT1_GMAIL_TARGET_EMAIL=your-gmail@gmail.com           # Import destination
 
+# Gmail Filter and Label Settings
+ACCOUNT1_GMAIL_APPLY_FILTERS=false                         # Apply Gmail filters: false=disabled, true=enabled
+ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3               # Custom label (optional)
+
 # Deletion Settings
 ACCOUNT1_DELETE_AFTER_FORWARD=false   # Debug: false, Production: true
 
@@ -174,10 +178,39 @@ ACCOUNT1_BACKUP_RETENTION_DAYS=90
 - **DELETE_AFTER_FORWARD=false**: Debug mode - process only latest 5 emails, don't delete from server
 - **DELETE_AFTER_FORWARD=true**: Production mode - delete from POP3 server after successful import
 
-## Gmail Filters (Optional)
+## Label and Filter Configuration
 
-To automatically label imported emails in Gmail:
+There are two methods for labeling imported emails:
 
+### Method 1: Custom Label (Simple)
+
+Specify a label directly in the `.env` file:
+
+```bash
+ACCOUNT1_GMAIL_APPLY_FILTERS=false
+ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
+```
+
+**Behavior:**
+- Emails are placed in the inbox with three labels: `INBOX`, `UNREAD`, and `ImportedFromPOP3`
+- If custom label is not specified, only `INBOX` and `UNREAD` are applied
+- Gmail's spam filtering works normally
+
+### Method 2: Gmail Filters (Advanced)
+
+Apply filter rules already created on the Gmail side:
+
+```bash
+ACCOUNT1_GMAIL_APPLY_FILTERS=true
+ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
+```
+
+**Behavior:**
+- Gmail's existing filter rules (automatic sorting by sender, subject, etc.) are applied
+- If a custom label is specified, it will be added in addition after filters are applied
+- If custom label is not specified, only filters are applied
+
+**How to Create Gmail Filters:**
 1. Go to Gmail → Settings → Filters and Blocked Addresses
 2. Create a new filter:
    - **From**: `*@example.com` (or your source domain)
@@ -192,6 +225,14 @@ Forwarded/
 ├── Example2
 └── Example3
 ```
+
+### Usage Guide
+
+| Use Case | Configuration | Example |
+|----------|--------------|---------|
+| Simple labeling | `APPLY_FILTERS=false` + `CUSTOM_LABEL` | Apply the same label to all emails |
+| Auto-sort by sender/subject | `APPLY_FILTERS=true` | Apply detailed sorting rules with Gmail filters |
+| Filters + additional label | `APPLY_FILTERS=true` + `CUSTOM_LABEL` | Sort with filters, then add "POP3 Import" label |
 
 ## How It Works
 

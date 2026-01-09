@@ -190,7 +190,7 @@ def get_gmail_service(account_num, credentials_file, token_file, target_email):
         return None
 
 
-def import_to_gmail(service, raw_email, account_num, target_email):
+def import_to_gmail(service, raw_email, account_num, target_email, apply_filters=False, custom_label=None):
     """
     Import email to Gmail using messages.import API.
 
@@ -199,6 +199,8 @@ def import_to_gmail(service, raw_email, account_num, target_email):
         raw_email: Raw email bytes (RFC 822 format)
         account_num: Account number for logging
         target_email: Target Gmail address for logging
+        apply_filters: Whether to apply Gmail filters to imported email
+        custom_label: Optional custom label to apply (only when apply_filters=False)
 
     Returns:
         True if successful, False otherwise
@@ -207,19 +209,50 @@ def import_to_gmail(service, raw_email, account_num, target_email):
         # Encode email to base64url
         encoded_message = base64.urlsafe_b64encode(raw_email).decode('utf-8')
 
-        # Call messages.import API
-        # labelIds ensures emails appear as UNREAD in INBOX (not archived/read)
-        message = service.users().messages().import_(
-            userId='me',
-            body={
-                'raw': encoded_message,
-                'labelIds': ['INBOX', 'UNREAD']
+        # Prepare import parameters
+        import_params = {
+            'userId': 'me',
+            'body': {
+                'raw': encoded_message
             },
-            internalDateSource='dateHeader'  # Preserve original date
-        ).execute()
+            'internalDateSource': 'dateHeader'  # Preserve original date
+        }
+
+        # Apply Gmail filters if enabled
+        if apply_filters:
+            # processForActionRules applies existing Gmail filter rules
+            import_params['processForActionRules'] = True
+            logging.debug(f"Account {account_num}: Applying Gmail filters to imported email")
+
+            # Add custom label if specified (applied after filters)
+            if custom_label:
+                import_params['body']['labelIds'] = [custom_label]
+                logging.debug(f"Account {account_num}: Adding custom label after filters: {custom_label}")
+        else:
+            # Default behavior: set INBOX and UNREAD labels explicitly
+            label_ids = ['INBOX', 'UNREAD']
+
+            # Add custom label if specified
+            if custom_label:
+                label_ids.append(custom_label)
+                logging.debug(f"Account {account_num}: Adding custom label: {custom_label}")
+
+            import_params['body']['labelIds'] = label_ids
+
+        # Call messages.import API
+        message = service.users().messages().import_(**import_params).execute()
 
         message_id = message.get('id')
-        logging.info(f"Account {account_num}: Successfully imported to Gmail (ID: {message_id}, target: {mask_email(target_email)})")
+        if apply_filters:
+            if custom_label:
+                filter_status = f"with filters applied + label: {custom_label}"
+            else:
+                filter_status = "with filters applied"
+        elif custom_label:
+            filter_status = f"labels: INBOX,UNREAD,{custom_label}"
+        else:
+            filter_status = "labels: INBOX,UNREAD"
+        logging.info(f"Account {account_num}: Successfully imported to Gmail (ID: {message_id}, {filter_status}, target: {mask_email(target_email)})")
         return True
 
     except HttpError as e:
@@ -428,6 +461,8 @@ def process_account(account_num):
         'gmail_credentials_file': os.getenv(f"{prefix}GMAIL_CREDENTIALS_FILE"),
         'gmail_token_file': os.getenv(f"{prefix}GMAIL_TOKEN_FILE"),
         'gmail_target_email': os.getenv(f"{prefix}GMAIL_TARGET_EMAIL"),
+        'gmail_apply_filters': get_env_bool(f"{prefix}GMAIL_APPLY_FILTERS", False),
+        'gmail_custom_label': os.getenv(f"{prefix}GMAIL_CUSTOM_LABEL"),
         'delete_after_forward': get_env_bool(f"{prefix}DELETE_AFTER_FORWARD", False),
         'backup_enabled': get_env_bool(f"{prefix}BACKUP_ENABLED", True),
         'backup_dir': os.getenv(f"{prefix}BACKUP_DIR"),
@@ -554,7 +589,9 @@ def process_account(account_num):
                     gmail_service,
                     raw_email,
                     account_num,
-                    config['gmail_target_email']
+                    config['gmail_target_email'],
+                    config['gmail_apply_filters'],
+                    config['gmail_custom_label']
                 )
 
                 if not success:
