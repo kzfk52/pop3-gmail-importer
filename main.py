@@ -199,11 +199,16 @@ def import_to_gmail(service, raw_email, account_num, target_email, apply_filters
         raw_email: Raw email bytes (RFC 822 format)
         account_num: Account number for logging
         target_email: Target Gmail address for logging
-        apply_filters: Whether to apply Gmail filters to imported email
-        custom_label: Optional custom label to apply (only when apply_filters=False)
+        apply_filters: (Deprecated - not supported by messages.import API)
+                      If True, logs a warning. Filters are not automatically applied.
+        custom_label: Optional custom label to apply to imported message
 
     Returns:
         True if successful, False otherwise
+
+    Note:
+        messages.import() does not support automatic Gmail filter application.
+        Use messages.insert() if you need filters, but it won't preserve original dates.
     """
     try:
         # Encode email to base64url
@@ -218,37 +223,29 @@ def import_to_gmail(service, raw_email, account_num, target_email, apply_filters
             'internalDateSource': 'dateHeader'  # Preserve original date
         }
 
-        # Apply Gmail filters if enabled
+        # Note: messages.import() does not support processForActionRules parameter
+        # Gmail filters will NOT be automatically applied to imported messages
+        # Only messages.insert() supports filter application, but it doesn't preserve dates
+
+        # Set labels for imported message
+        label_ids = ['INBOX', 'UNREAD']
+
+        # Add custom label if specified
+        if custom_label:
+            label_ids.append(custom_label)
+            logging.debug(f"Account {account_num}: Adding custom label: {custom_label}")
+
+        import_params['body']['labelIds'] = label_ids
+
         if apply_filters:
-            # processForActionRules applies existing Gmail filter rules
-            import_params['processForActionRules'] = True
-            logging.debug(f"Account {account_num}: Applying Gmail filters to imported email")
-
-            # Add custom label if specified (applied after filters)
-            if custom_label:
-                import_params['body']['labelIds'] = [custom_label]
-                logging.debug(f"Account {account_num}: Adding custom label after filters: {custom_label}")
-        else:
-            # Default behavior: set INBOX and UNREAD labels explicitly
-            label_ids = ['INBOX', 'UNREAD']
-
-            # Add custom label if specified
-            if custom_label:
-                label_ids.append(custom_label)
-                logging.debug(f"Account {account_num}: Adding custom label: {custom_label}")
-
-            import_params['body']['labelIds'] = label_ids
+            # Log warning that filter application is not supported with import
+            logging.warning(f"Account {account_num}: GMAIL_APPLY_FILTERS is enabled but messages.import() does not support automatic filter application. Only labels will be applied.")
 
         # Call messages.import API
         message = service.users().messages().import_(**import_params).execute()
 
         message_id = message.get('id')
-        if apply_filters:
-            if custom_label:
-                filter_status = f"with filters applied + label: {custom_label}"
-            else:
-                filter_status = "with filters applied"
-        elif custom_label:
+        if custom_label:
             filter_status = f"labels: INBOX,UNREAD,{custom_label}"
         else:
             filter_status = "labels: INBOX,UNREAD"

@@ -153,8 +153,8 @@ ACCOUNT1_GMAIL_CREDENTIALS_FILE=credentials.json           # OAuth credentials
 ACCOUNT1_GMAIL_TOKEN_FILE=tokens/token_account1.json       # Token storage
 ACCOUNT1_GMAIL_TARGET_EMAIL=your-gmail@gmail.com           # Import destination
 
-# Gmail Filter and Label Settings
-ACCOUNT1_GMAIL_APPLY_FILTERS=false                         # Apply Gmail filters: false=disabled, true=enabled
+# Gmail Label Settings
+ACCOUNT1_GMAIL_APPLY_FILTERS=false                         # Deprecated (does not work): messages.import() API does not support automatic filter application
 ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3               # Custom label (optional)
 
 # Debug Settings
@@ -183,16 +183,15 @@ ACCOUNT1_BACKUP_RETENTION_DAYS=90
 - **DELETE_AFTER_FORWARD=false**: Keep mode - keep emails on POP3 server after import (safe for testing)
 - **DELETE_AFTER_FORWARD=true**: Delete mode - delete from POP3 server after successful import (for production)
 
-## Label and Filter Configuration
+## Label Configuration
 
-There are two methods for labeling imported emails:
+Imported emails are automatically labeled.
 
-### Method 1: Custom Label (Simple)
+### Custom Label Configuration
 
 Specify a label directly in the `.env` file:
 
 ```bash
-ACCOUNT1_GMAIL_APPLY_FILTERS=false
 ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
 ```
 
@@ -201,43 +200,36 @@ ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
 - If custom label is not specified, only `INBOX` and `UNREAD` are applied
 - Gmail's spam filtering works normally
 
-### Method 2: Gmail Filters (Advanced)
+### Recommended Label Structure
 
-Apply filter rules already created on the Gmail side:
+When managing multiple POP3 accounts, hierarchical labels are convenient:
 
+```
+Imported/
+├── Account1
+├── Account2
+└── Account3
+```
+
+Configuration example:
 ```bash
-ACCOUNT1_GMAIL_APPLY_FILTERS=true
-ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
+ACCOUNT1_GMAIL_CUSTOM_LABEL=Imported/Account1
+ACCOUNT2_GMAIL_CUSTOM_LABEL=Imported/Account2
+ACCOUNT3_GMAIL_CUSTOM_LABEL=Imported/Account3
 ```
 
-**Behavior:**
-- Gmail's existing filter rules (automatic sorting by sender, subject, etc.) are applied
-- If a custom label is specified, it will be added in addition after filters are applied
-- If custom label is not specified, only filters are applied
+### ⚠️ About Automatic Gmail Filter Application (Important)
 
-**How to Create Gmail Filters:**
-1. Go to Gmail → Settings → Filters and Blocked Addresses
-2. Create a new filter:
-   - **From**: `*@example.com` (or your source domain)
-   - **Action**: Apply label "Forwarded/Example"
-   - Check "Also apply filter to matching conversations"
-3. Repeat for other POP3 accounts
+**The `GMAIL_APPLY_FILTERS` setting is deprecated. This feature does not work.**
 
-Recommended label structure:
-```
-Forwarded/
-├── Example1
-├── Example2
-└── Example3
-```
+Reasons:
+- Gmail API's `messages.import()` method does not support automatic Gmail filter application
+- Even if you set `GMAIL_APPLY_FILTERS=true`, existing Gmail filters will not be applied
+- Automatic filter application is only available with `messages.insert()`, but this method cannot preserve original email dates
 
-### Usage Guide
-
-| Use Case | Configuration | Example |
-|----------|--------------|---------|
-| Simple labeling | `APPLY_FILTERS=false` + `CUSTOM_LABEL` | Apply the same label to all emails |
-| Auto-sort by sender/subject | `APPLY_FILTERS=true` | Apply detailed sorting rules with Gmail filters |
-| Filters + additional label | `APPLY_FILTERS=true` + `CUSTOM_LABEL` | Sort with filters, then add "POP3 Import" label |
+**Alternatives:**
+- Create filters manually on the Gmail side and **apply them manually after import**
+- Or use custom labels in the program to organize emails
 
 ## How It Works
 

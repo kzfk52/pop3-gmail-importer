@@ -153,8 +153,8 @@ ACCOUNT1_GMAIL_CREDENTIALS_FILE=credentials.json           # OAuth認証情報
 ACCOUNT1_GMAIL_TOKEN_FILE=tokens/token_account1.json       # トークン保存先
 ACCOUNT1_GMAIL_TARGET_EMAIL=your-gmail@gmail.com           # インポート先
 
-# Gmail フィルタとラベル設定
-ACCOUNT1_GMAIL_APPLY_FILTERS=false                         # Gmailフィルタ適用: false=無効, true=有効
+# Gmail ラベル設定
+ACCOUNT1_GMAIL_APPLY_FILTERS=false                         # 非推奨（機能しません）：messages.import() APIはフィルタ自動適用に非対応
 ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3               # カスタムラベル（オプション）
 
 # デバッグ設定
@@ -183,16 +183,15 @@ ACCOUNT1_BACKUP_RETENTION_DAYS=90
 - **DELETE_AFTER_FORWARD=false**: 保持モード - インポート後もPOP3サーバーにメールを残す（安全なテスト向け）
 - **DELETE_AFTER_FORWARD=true**: 削除モード - インポート成功後、POP3サーバーからメールを削除（本番運用向け）
 
-## ラベルとフィルタの設定
+## ラベル設定
 
-インポートされたメールのラベル付けには2つの方法があります：
+インポートされたメールには自動的にラベルが付与されます。
 
-### 方法1: カスタムラベル（シンプル）
+### カスタムラベルの設定
 
 `.env`ファイルで直接ラベルを指定します：
 
 ```bash
-ACCOUNT1_GMAIL_APPLY_FILTERS=false
 ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
 ```
 
@@ -201,43 +200,36 @@ ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
 - カスタムラベル未指定の場合は `INBOX` と `UNREAD` のみ適用されます
 - Gmailの迷惑メール判定は通常通り機能します
 
-### 方法2: Gmailフィルタ（高度）
+### 推奨ラベル構造
 
-Gmail側で既に作成したフィルタルールを適用します：
+複数のPOP3アカウントを管理する場合、階層ラベルが便利です：
 
+```
+Imported/
+├── Account1
+├── Account2
+└── Account3
+```
+
+設定例：
 ```bash
-ACCOUNT1_GMAIL_APPLY_FILTERS=true
-ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3
+ACCOUNT1_GMAIL_CUSTOM_LABEL=Imported/Account1
+ACCOUNT2_GMAIL_CUSTOM_LABEL=Imported/Account2
+ACCOUNT3_GMAIL_CUSTOM_LABEL=Imported/Account3
 ```
 
-**動作:**
-- Gmailの既存フィルタルール（送信者、件名などによる自動振り分け）が適用されます
-- カスタムラベルを指定した場合、フィルタ適用後にさらにそのラベルも追加されます
-- カスタムラベル未指定の場合は、フィルタのみが適用されます
+### ⚠️ Gmailフィルタの自動適用について（重要）
 
-**Gmailフィルタの作成方法:**
-1. Gmail → 設定 → フィルタとブロック中のアドレス に移動
-2. 新しいフィルタを作成：
-   - **From**: `*@example.com`（またはソースドメイン）
-   - **操作**: ラベル「Forwarded/Example」を適用
-   - 「一致する会話にもフィルタを適用する」にチェック
-3. 他のPOP3アカウントについても繰り返し
+**`GMAIL_APPLY_FILTERS`設定は非推奨です。この機能は動作しません。**
 
-推奨ラベル構造：
-```
-Forwarded/
-├── Example1
-├── Example2
-└── Example3
-```
+理由：
+- Gmail APIの`messages.import()`メソッドは、Gmailフィルタの自動適用をサポートしていません
+- `GMAIL_APPLY_FILTERS=true`に設定しても、既存のGmailフィルタは適用されません
+- フィルタの自動適用機能は`messages.insert()`でのみ利用可能ですが、このメソッドは元のメール日付を保持できません
 
-### 使い分けガイド
-
-| 用途 | 設定 | 使用例 |
-|------|------|--------|
-| シンプルにラベル付けしたい | `APPLY_FILTERS=false` + `CUSTOM_LABEL` | すべてのメールに同じラベルを付ける |
-| 送信者や件名で自動振り分け | `APPLY_FILTERS=true` | Gmailフィルタで詳細な振り分けルール適用 |
-| フィルタ + 追加ラベル | `APPLY_FILTERS=true` + `CUSTOM_LABEL` | フィルタで振り分け、さらに「POP3インポート」ラベルも追加 |
+**代替案：**
+- Gmail側で手動でフィルタを作成し、**インポート後に手動で適用**してください
+- または、プログラムでカスタムラベルを使用して整理してください
 
 ## 動作の仕組み
 
