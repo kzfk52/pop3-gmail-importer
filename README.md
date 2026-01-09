@@ -157,8 +157,11 @@ ACCOUNT1_GMAIL_TARGET_EMAIL=your-gmail@gmail.com           # インポート先
 ACCOUNT1_GMAIL_APPLY_FILTERS=false                         # Gmailフィルタ適用: false=無効, true=有効
 ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3               # カスタムラベル（オプション）
 
+# デバッグ設定
+ACCOUNT1_DEBUG_LIMIT_EMAILS=false     # テスト用に最新5件のみ処理: false=全件処理, true=5件のみ
+
 # 削除設定
-ACCOUNT1_DELETE_AFTER_FORWARD=false   # デバッグ: false, 本番: true
+ACCOUNT1_DELETE_AFTER_FORWARD=false   # POP3サーバーから削除: false=保持, true=削除
 
 # バックアップ設定
 ACCOUNT1_BACKUP_ENABLED=true
@@ -175,8 +178,10 @@ ACCOUNT1_BACKUP_RETENTION_DAYS=90
     ACCOUNT1_GMAIL_TOKEN_FILE=tokens/token_gmail_a.json
     ACCOUNT3_GMAIL_TOKEN_FILE=tokens/token_gmail_a.json
     ```
-- **DELETE_AFTER_FORWARD=false**: デバッグモード - 最新5件のメールのみ処理、サーバーから削除しない
-- **DELETE_AFTER_FORWARD=true**: 本番モード - インポート成功後、POP3サーバーからメールを削除
+- **DEBUG_LIMIT_EMAILS=true**: テストモード - 最新5件のメールのみ処理（全件処理したくない場合に便利）
+- **DEBUG_LIMIT_EMAILS=false**: 通常モード - すべての未処理メールを処理
+- **DELETE_AFTER_FORWARD=false**: 保持モード - インポート後もPOP3サーバーにメールを残す（安全なテスト向け）
+- **DELETE_AFTER_FORWARD=true**: 削除モード - インポート成功後、POP3サーバーからメールを削除（本番運用向け）
 
 ## ラベルとフィルタの設定
 

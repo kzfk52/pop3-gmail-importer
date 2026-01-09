@@ -157,8 +157,11 @@ ACCOUNT1_GMAIL_TARGET_EMAIL=your-gmail@gmail.com           # Import destination
 ACCOUNT1_GMAIL_APPLY_FILTERS=false                         # Apply Gmail filters: false=disabled, true=enabled
 ACCOUNT1_GMAIL_CUSTOM_LABEL=ImportedFromPOP3               # Custom label (optional)
 
+# Debug Settings
+ACCOUNT1_DEBUG_LIMIT_EMAILS=false     # Limit to 5 most recent emails for testing: false=process all, true=5 only
+
 # Deletion Settings
-ACCOUNT1_DELETE_AFTER_FORWARD=false   # Debug: false, Production: true
+ACCOUNT1_DELETE_AFTER_FORWARD=false   # Delete from POP3 server: false=keep, true=delete
 
 # Backup Settings
 ACCOUNT1_BACKUP_ENABLED=true
@@ -175,8 +178,10 @@ ACCOUNT1_BACKUP_RETENTION_DAYS=90
     ACCOUNT1_GMAIL_TOKEN_FILE=tokens/token_gmail_a.json
     ACCOUNT3_GMAIL_TOKEN_FILE=tokens/token_gmail_a.json
     ```
-- **DELETE_AFTER_FORWARD=false**: Debug mode - process only latest 5 emails, don't delete from server
-- **DELETE_AFTER_FORWARD=true**: Production mode - delete from POP3 server after successful import
+- **DEBUG_LIMIT_EMAILS=true**: Test mode - process only the 5 most recent emails (useful when you don't want to process all)
+- **DEBUG_LIMIT_EMAILS=false**: Normal mode - process all unprocessed emails
+- **DELETE_AFTER_FORWARD=false**: Keep mode - keep emails on POP3 server after import (safe for testing)
+- **DELETE_AFTER_FORWARD=true**: Delete mode - delete from POP3 server after successful import (for production)
 
 ## Label and Filter Configuration
 

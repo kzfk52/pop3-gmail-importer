@@ -463,6 +463,7 @@ def process_account(account_num):
         'gmail_target_email': os.getenv(f"{prefix}GMAIL_TARGET_EMAIL"),
         'gmail_apply_filters': get_env_bool(f"{prefix}GMAIL_APPLY_FILTERS", False),
         'gmail_custom_label': os.getenv(f"{prefix}GMAIL_CUSTOM_LABEL"),
+        'debug_limit_emails': get_env_bool(f"{prefix}DEBUG_LIMIT_EMAILS", False),
         'delete_after_forward': get_env_bool(f"{prefix}DELETE_AFTER_FORWARD", False),
         'backup_enabled': get_env_bool(f"{prefix}BACKUP_ENABLED", True),
         'backup_dir': os.getenv(f"{prefix}BACKUP_DIR"),
@@ -525,9 +526,9 @@ def process_account(account_num):
         logging.info(f"Account {account_num}: {len(unprocessed)} unprocessed messages")
 
         # Debug mode: limit to 5 most recent emails
-        if not config['delete_after_forward']:
+        if config['debug_limit_emails']:
             if len(unprocessed) > 5:
-                logging.info(f"Account {account_num}: Debug mode - limiting to 5 most recent emails")
+                logging.info(f"Account {account_num}: Debug limit enabled - limiting to 5 most recent emails")
                 # Get Date header for each message to sort by date
                 msg_dates = []
                 for msg_num, uidl in unprocessed:
@@ -603,12 +604,12 @@ def process_account(account_num):
                     logging.error(f"Account {account_num}: Failed to save UIDL, will retry next loop")
                     continue
 
-                # Mark for deletion if in production mode
+                # Delete from POP3 server if enabled
                 if config['delete_after_forward']:
-                    #pop3.dele(msg_num)
-                    logging.debug(f"Account {account_num}: Marked message {msg_num} for deletion")
+                    pop3.dele(msg_num)
+                    logging.debug(f"Account {account_num}: Marked message {msg_num} for deletion from POP3 server")
                 else:
-                    logging.debug(f"Account {account_num}: Debug mode - not deleting message {msg_num}")
+                    logging.debug(f"Account {account_num}: Keeping message {msg_num} on POP3 server (deletion disabled)")
 
                 processed_count += 1
 
