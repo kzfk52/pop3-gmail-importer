@@ -76,6 +76,12 @@
 python test_connection.py
 ```
 
+**古いTLS（TLS 1.0/1.1）のPOP3サーバに接続する場合**：
+
+```bash
+OPENSSL_CONF="$(pwd)/openssl.cnf" python test_connection.py
+```
+
 これにより：
 - POP3接続をテスト
 - OAuth認証を実行（初回実行時にブラウザが開きます）
@@ -90,6 +96,12 @@ python test_connection.py
 
 ```bash
 python main.py
+```
+
+**古いTLS（TLS 1.0/1.1）のPOP3サーバに接続する場合**：
+
+```bash
+OPENSSL_CONF="$(pwd)/openssl.cnf" python main.py
 ```
 
 プログラムは以下を実行します：

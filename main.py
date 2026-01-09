@@ -568,7 +568,7 @@ def process_account(account_num):
 
                 # Mark for deletion if in production mode
                 if config['delete_after_forward']:
-                    pop3.dele(msg_num)
+                    #pop3.dele(msg_num)
                     logging.debug(f"Account {account_num}: Marked message {msg_num} for deletion")
                 else:
                     logging.debug(f"Account {account_num}: Debug mode - not deleting message {msg_num}")

@@ -76,6 +76,12 @@ Run the connection test program:
 python test_connection.py
 ```
 
+**For connecting to old TLS (TLS 1.0/1.1) POP3 servers**:
+
+```bash
+OPENSSL_CONF="$(pwd)/openssl.cnf" python test_connection.py
+```
+
 This will:
 - Test POP3 connection
 - Perform OAuth authentication (browser will open on first run)
@@ -90,6 +96,12 @@ Start the email importer:
 
 ```bash
 python main.py
+```
+
+**For connecting to old TLS (TLS 1.0/1.1) POP3 servers**:
+
+```bash
+OPENSSL_CONF="$(pwd)/openssl.cnf" python main.py
 ```
 
 The program will:

@@ -1,4 +1,5 @@
 #!/bin/bash
+export OPENSSL_CONF="$(pwd)/openssl.cnf"
 # POP3 to Gmail Importer - macOS/Linux Startup Script
 
 # Get the directory where this script is located
